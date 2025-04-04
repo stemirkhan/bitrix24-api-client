@@ -1,0 +1,23 @@
+[project]
+name = "bitrix24-api-client"
+version = "0.1.0"
+description = "Library for working with the Bitrix24 API (supports both synchronous and asynchronous clients)."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+package-dir = {"" = "src"}
+
+[project.optional-dependencies]
+dev = ["mypy"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_configs = true
+pretty = true
+show_error_codes = true
+disallow_untyped_defs = true
+disallow_any_unimported = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
