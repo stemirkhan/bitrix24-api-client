@@ -1,14 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 from src.bitrix24_client.exceptions import Bitrix24InvalidBaseURLError
 from src.bitrix24_client.utils import is_valid_url
 
+
 class BaseBitrix24Client(ABC):
     def __init__(self, base_url: str, access_token: str, user_id: Optional[int] = None, timeout: int = 10):
         """
-        Base class for Bitrix24 API clients.
+        Initialize the base Bitrix24 API client.
 
         Args:
             base_url (str): Base URL of the Bitrix24 portal (e.g., 'https://yourdomain.bitrix24.ru').
@@ -22,14 +23,54 @@ class BaseBitrix24Client(ABC):
         if not is_valid_url(base_url):
             raise Bitrix24InvalidBaseURLError(f"Invalid base URL: '{base_url}'")
 
-        self.base_url = base_url.rstrip('/') + '/'
-        self.access_token = access_token
-        self.user_id = user_id
-        self.timeout = timeout
+        self._base_url = base_url.rstrip('/') + '/'
+        self._access_token = access_token
+        self._user_id = user_id
+        self._timeout = timeout
+
+    @property
+    def base_url(self) -> str:
+        """
+        Get the base URL of the Bitrix24 portal.
+
+        Returns:
+            str: The base URL.
+        """
+        return self._base_url
+
+    @property
+    def access_token(self) -> str:
+        """
+        Get the access token or webhook key.
+
+        Returns:
+            str: The access token.
+        """
+        return self._access_token
+
+    @property
+    def user_id(self) -> Optional[int]:
+        """
+        Get the user ID if available.
+
+        Returns:
+            Optional[int]: The user ID or None if not set.
+        """
+        return self._user_id
+
+    @property
+    def timeout(self) -> int:
+        """
+        Get the timeout value for requests.
+
+        Returns:
+            int: The timeout in seconds.
+        """
+        return self._timeout
 
     def _build_url(self, method: str) -> str:
         """
-        Constructs the full API endpoint URL for a given Bitrix24 method.
+        Construct the full API endpoint URL for a given Bitrix24 method.
 
         Args:
             method (str): The API method name (e.g., 'crm.lead.get').
@@ -37,16 +78,16 @@ class BaseBitrix24Client(ABC):
         Returns:
             str: The full URL to be used for the API call.
         """
-        if self.user_id is not None:
-            path = f"rest/{self.user_id}/{self.access_token}/{method}"
+        if self._user_id is not None:
+            path = f"rest/{self._user_id}/{self._access_token}/{method}"
         else:
-            path = f"rest/{self.access_token}/{method}"
-        return urljoin(self.base_url, path)
+            path = f"rest/{self._access_token}/{method}"
+        return urljoin(self._base_url, path)
 
     @abstractmethod
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
         """
-        Executes a call to the Bitrix24 REST API.
+        Execute a call to the Bitrix24 REST API.
 
         Args:
             method (str): The API method name.
