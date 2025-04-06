@@ -1,8 +1,6 @@
 import httpx
-
 from typing import Any, Dict, Optional
 import asyncio
-
 from .base_client import BaseBitrix24Client
 from .exceptions import (
     Bitrix24Error,
@@ -13,6 +11,17 @@ from .exceptions import (
 
 
 class AsyncBitrix24Client(BaseBitrix24Client):
+    def __init__(self, *args, max_concurrent_requests: int = 50, **kwargs):
+        """
+        Initializes the AsyncBitrix24Client with an optional limit for concurrent requests.
+
+        Args:
+            max_concurrent_requests (int): The maximum number of concurrent requests.
+        """
+        super().__init__(*args, **kwargs)
+        self.max_concurrent_requests = max_concurrent_requests
+        self.semaphore = asyncio.Semaphore(self.max_concurrent_requests)
+
     async def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
         Makes an asynchronous POST request to the Bitrix24 API and handles errors, with support for paginated list methods.
@@ -54,12 +63,13 @@ class AsyncBitrix24Client(BaseBitrix24Client):
             dict: The parsed JSON response from Bitrix24 API.
         """
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, json=params or {})
-                response.raise_for_status()
+            async with self.semaphore:
+                async with httpx.AsyncClient(timeout=self.timeout) as client:
+                    response = await client.post(url, json=params or {})
+                    response.raise_for_status()
 
-                data = self._validate_response(response.text)
-                return data
+                    data = self._validate_response(response.text)
+                    return data
 
         except httpx.TimeoutException:
             raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
@@ -87,7 +97,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
 
     async def _fetch_all_pages(self, url: str, params: Optional[Dict[str, Any]]) -> list:
         """
-        Fetches all pages of data using parallel async requests.
+        Fetches all pages of data using parallel async requests with semaphore-based concurrency control.
 
         Args:
             url (str): The URL for the API request.
@@ -115,7 +125,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         pages = await asyncio.gather(*tasks)
 
         for page in pages:
-            page_results, _ , _ = self._handle_response(page, fetch_all=True)
+            page_results, _, _ = self._handle_response(page, fetch_all=True)
             all_results.extend(page_results)
 
         return all_results
