@@ -1,8 +1,9 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from src.bitrix24_client.exceptions import Bitrix24InvalidBaseURLError
+from src.bitrix24_client.exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
 from src.bitrix24_client.utils import is_valid_url
 
 
@@ -84,17 +85,56 @@ class BaseBitrix24Client(ABC):
             path = f"rest/{self._access_token}/{method}"
         return urljoin(self._base_url, path)
 
-    @abstractmethod
-    def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
+    @staticmethod
+    def _handle_response(data: dict, fetch_all: bool) -> tuple[list, Any, Any]:
         """
-        Execute a call to the Bitrix24 REST API.
+        Handles the response from Bitrix24 API and manages pagination if needed.
 
         Args:
-            method (str): The API method to call (e.g., 'crm.lead.get').
-            params (Optional[Dict[str, Any]]): Parameters to pass in the request body.
-            fetch_all (bool): Whether to fetch all pages of data if the method is paginated.
+            data (dict): The response data from the API.
+            fetch_all (bool): Whether to fetch all pages of data.
 
         Returns:
-            Any: The result returned by the Bitrix24 API.
+            tuple: A tuple of results and the next page token (if any).
         """
+        results = data.get("result", [])
+
+        if isinstance(results, dict):
+            key = list(results.keys())[0]
+            results = results[key]
+
+        if fetch_all:
+            return results, data.get('next', None), data.get('total', None)
+        return results, None, None
+
+    @staticmethod
+    def _validate_response(response_text: str) -> dict:
+        """
+        Validates and parses the JSON response from Bitrix24 API.
+
+        Args:
+            response_text (str): The response text from the API.
+
+        Returns:
+            dict: Parsed JSON data.
+
+        Raises:
+            Bitrix24InvalidResponseError: If the response is not valid JSON.
+            Bitrix24APIError: If the response contains an API error.
+        """
+        try:
+            data = json.loads(response_text)
+        except ValueError:
+            raise Bitrix24InvalidResponseError(f"Invalid JSON from Bitrix24: {response_text}")
+
+        if "error" in data:
+            raise Bitrix24APIError(
+                code=data.get("error"),
+                description=data.get("error_description") or "No description"
+            )
+
+        return data
+
+    @abstractmethod
+    def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         ...
