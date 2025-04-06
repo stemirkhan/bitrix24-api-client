@@ -85,13 +85,14 @@ class BaseBitrix24Client(ABC):
         return urljoin(self._base_url, path)
 
     @abstractmethod
-    def call_method(self, method: str, params: Optional[Dict[str, Any]] = None) -> Any:
+    def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
         Execute a call to the Bitrix24 REST API.
 
         Args:
-            method (str): The API method name.
-            params (Optional[Dict[str, Any]]): Parameters for the method call.
+            method (str): The API method to call (e.g., 'crm.lead.get').
+            params (Optional[Dict[str, Any]]): Parameters to pass in the request body.
+            fetch_all (bool): Whether to fetch all pages of data if the method is paginated.
 
         Returns:
             Any: The result returned by the Bitrix24 API.
