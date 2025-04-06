@@ -11,7 +11,7 @@ from .exceptions import (
 
 
 class AsyncBitrix24Client(BaseBitrix24Client):
-    def __init__(self, *args, max_concurrent_requests: int = 50, **kwargs):
+    def __init__(self, *args, max_concurrent_requests: int = 10, **kwargs):
         """
         Initializes the AsyncBitrix24Client with an optional limit for concurrent requests.
 
