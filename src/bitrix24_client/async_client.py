@@ -16,7 +16,14 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         Initializes the AsyncBitrix24Client with an optional limit for concurrent requests.
 
         Args:
+            base_url (str): Base URL of the Bitrix24 portal (e.g., 'https://yourdomain.bitrix24.ru').
+            access_token (str): Bitrix24 access token or webhook key.
+            user_id (Optional[int]): User ID for OAuth-based authentication (None for webhook).
+            timeout (int): Request timeout in seconds.
             max_concurrent_requests (int): The maximum number of concurrent requests.
+
+        Raises:
+            Bitrix24InvalidBaseURLError: If the provided base_url is not a valid HTTP or HTTPS URL.
         """
         super().__init__(*args, **kwargs)
         self.max_concurrent_requests = max_concurrent_requests
