@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Library for working with the Bitrix24 API (supports both synchronous and asynchronous clients)."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "requests>=2.32.3",
+]
 package-dir = {"" = "src"}
 
 [project.optional-dependencies]
