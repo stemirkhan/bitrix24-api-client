@@ -5,6 +5,8 @@ description = "Library for working with the Bitrix24 API (supports both synchron
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "httpx>=0.28.1",
+    "mypy>=1.15.0",
     "requests>=2.32.3",
 ]
 package-dir = {"" = "src"}
