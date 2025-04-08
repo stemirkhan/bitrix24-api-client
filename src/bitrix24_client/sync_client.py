@@ -6,9 +6,7 @@ from .exceptions import (
     Bitrix24Error,
     Bitrix24ConnectionError,
     Bitrix24TimeoutError,
-    Bitrix24HTTPError,
-    Bitrix24APIError,
-    Bitrix24InvalidResponseError,
+    Bitrix24HTTPError
 )
 
 
@@ -61,17 +59,7 @@ class Bitrix24Client(BaseBitrix24Client):
             response = requests.post(url, json=params or {}, timeout=self.timeout)
             response.raise_for_status()
 
-            try:
-                data = response.json()
-            except ValueError:
-                raise Bitrix24InvalidResponseError(f"Invalid JSON from Bitrix24: {response.text}")
-
-            if "error" in data:
-                raise Bitrix24APIError(
-                    code=data.get("error"),
-                    description=data.get("error_description") or "No description"
-                )
-
+            data = self._validate_response(response.text)
             return data
 
         except Timeout:
@@ -82,24 +70,6 @@ class Bitrix24Client(BaseBitrix24Client):
             raise Bitrix24HTTPError(e.response.status_code, e.response.text)
         except RequestException as e:
             raise Bitrix24Error(f"Request error to Bitrix24: {str(e)}")
-
-    @staticmethod
-    def _handle_response(data: dict, fetch_all: bool) -> tuple[list, Any]:
-        """
-        Handles the response from Bitrix24 API and manages pagination if needed.
-
-        Args:
-            data (dict): The response data from the API.
-            fetch_all (bool): Whether to fetch all pages of data.
-
-        Returns:
-            list: The list of results (all pages if fetch_all is True).
-        """
-        results = data.get("result", [])
-
-        if fetch_all and "next" in data:
-            return results, data["next"]
-        return results, None
 
     def _fetch(self, url: str, params: Optional[Dict[str, Any]]) -> list:
         """
@@ -113,7 +83,7 @@ class Bitrix24Client(BaseBitrix24Client):
             list: The list of results from the single page of data.
         """
         data = self._make_request(url, params)
-        results, _ = self._handle_response(data, fetch_all=False)
+        results, _, _ = self._handle_response(data, fetch_all=False)
         return results
 
     def _fetch_all_pages(self, url: str, params: Optional[Dict[str, Any]]) -> list:
@@ -133,9 +103,9 @@ class Bitrix24Client(BaseBitrix24Client):
         while True:
             data = self._make_request(url, params)
 
-            results, next_page = self._handle_response(data, fetch_all=True)
+            results, next_page, _ = self._handle_response(data, fetch_all=True)
 
-            all_results.append(results)
+            all_results.extend(results)
 
             if next_page:
                 params["start"] = next_page
