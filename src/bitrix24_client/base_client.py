@@ -1,4 +1,6 @@
 import json
+import math
+import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
@@ -8,18 +10,32 @@ from src.bitrix24_client.utils import is_valid_url
 
 
 class BaseBitrix24Client(ABC):
-    def __init__(self, base_url: str, access_token: str, user_id: Optional[int] = None, timeout: int = 10):
+    def __init__(
+            self,
+            base_url: str,
+            access_token: str,
+            user_id: Optional[int] = None,
+            timeout: int = 10,
+            rate_limit_pause: float = 1.0,
+            max_retries: int = 5,
+            max_delay: float = 20.0,
+            retry_strategy: str = "exponential"
+    ):
         """
         Initialize the base Bitrix24 API client.
 
         Args:
-            base_url (str): Base URL of the Bitrix24 portal (e.g., 'https://yourdomain.bitrix24.ru').
+            base_url (str): Base URL of the Bitrix24 portal.
             access_token (str): Bitrix24 access token or webhook key.
             user_id (Optional[int]): User ID for OAuth-based authentication (None for webhook).
             timeout (int): Request timeout in seconds.
+            rate_limit_pause (float): Initial pause in seconds before retry.
+            max_retries (int): Maximum number of retries on 503 errors.
+            max_delay (float): Maximum delay between retries in seconds.
+            retry_strategy (str): Retry delay strategy. One of: 'fixed', 'linear', 'exponential', 'logarithmic', 'exponential_jitter'.
 
         Raises:
-            Bitrix24InvalidBaseURLError: If the provided base_url is not a valid HTTP or HTTPS URL.
+            Bitrix24InvalidBaseURLError: If the provided base_url is invalid.
         """
         if not is_valid_url(base_url):
             raise Bitrix24InvalidBaseURLError(f"Invalid base URL: '{base_url}'")
@@ -28,6 +44,25 @@ class BaseBitrix24Client(ABC):
         self._access_token = access_token
         self._user_id = user_id
         self._timeout = timeout
+        self._rate_limit_pause = rate_limit_pause
+        self._max_retries = max_retries
+        self._max_delay = max_delay
+        self._retry_strategy = retry_strategy
+
+    @property
+    def rate_limit_pause(self) -> float:
+        """Getter for the rate limit pause duration."""
+        return self._rate_limit_pause
+
+    @property
+    def max_retries(self) -> int:
+        """
+        Get the maximum number of retries after a 503 error.
+
+        Returns:
+            int: max_retries
+        """
+        return self._max_retries
 
     @property
     def base_url(self) -> str:
@@ -134,6 +169,35 @@ class BaseBitrix24Client(ABC):
             )
 
         return data
+
+    def _calculate_delay(self, retries: int) -> float:
+        """
+        Calculates the delay before the next retry based on the selected strategy.
+
+        Args:
+            retries (int): The current retry attempt number (starting from 1).
+
+        Returns:
+            float: Delay in seconds before the next retry.
+        """
+        base = self._rate_limit_pause
+        strategy = self._retry_strategy.lower()
+
+        if strategy == "fixed":
+            delay = base
+        elif strategy == "linear":
+            delay = (base * retries) if retries > 0 else base
+        elif strategy == "logarithmic":
+            delay = (base * math.log1p(retries)) if retries > 0 else base
+        elif strategy == "exponential":
+            delay = base * (2 ** (retries - 1))
+        elif strategy == "exponential_jitter":
+            delay = base * (2 ** (retries - 1))
+            delay = random.uniform(0, delay)
+        else:
+            raise ValueError(f"Unknown retry strategy: '{self._retry_strategy}'")
+
+        return min(delay, self._max_delay)
 
     @abstractmethod
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:

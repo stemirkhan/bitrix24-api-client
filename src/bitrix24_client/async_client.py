@@ -1,3 +1,5 @@
+import math
+
 import httpx
 from typing import Any, Dict, Optional
 import asyncio
@@ -68,24 +70,42 @@ class AsyncBitrix24Client(BaseBitrix24Client):
 
         Returns:
             dict: The parsed JSON response from Bitrix24 API.
+
+        Raises:
+            Bitrix24TimeoutError: If the request times out.
+            Bitrix24ConnectionError: If the connection to Bitrix24 fails.
+            Bitrix24HTTPError: If a non-503 HTTP error occurs.
+            Bitrix24Error: If maximum retries are exceeded or another request error occurs.
         """
-        try:
-            async with self.semaphore:
-                async with httpx.AsyncClient(timeout=self.timeout) as client:
-                    response = await client.post(url, json=params or {})
-                    response.raise_for_status()
+        retries = 0
 
-                    data = self._validate_response(response.text)
-                    return data
+        while retries <= self._max_retries:
+            try:
+                async with self.semaphore:
+                    async with httpx.AsyncClient(timeout=self._timeout) as client:
+                        response = await client.post(url, json=params or {})
 
-        except httpx.TimeoutException:
-            raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
-        except httpx.ConnectError:
-            raise Bitrix24ConnectionError(f"Failed to connect to Bitrix24: {url}")
-        except httpx.HTTPStatusError as e:
-            raise Bitrix24HTTPError(e.response.status_code, e.response.text)
-        except httpx.RequestError as e:
-            raise Bitrix24Error(f"Request error to Bitrix24: {str(e)}")
+                        if response.status_code == 503:
+                            if retries == self._max_retries:
+                                raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
+                            delay = self._calculate_delay(retries)
+                            await asyncio.sleep(delay)
+                            retries += 1
+                            continue
+
+                        response.raise_for_status()
+                        return self._validate_response(response.text)
+
+            except httpx.TimeoutException:
+                raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
+            except httpx.ConnectError:
+                raise Bitrix24ConnectionError(f"Failed to connect to Bitrix24: {url}")
+            except httpx.HTTPStatusError as e:
+                raise Bitrix24HTTPError(e.response.status_code, e.response.text)
+            except httpx.RequestError as e:
+                raise Bitrix24Error(f"Request error to Bitrix24: {str(e)}")
+
+        raise Bitrix24Error(f"Exceeded maximum retry attempts for {url}")
 
     async def _fetch(self, url: str, params: Optional[Dict[str, Any]]) -> list:
         """
