@@ -33,14 +33,14 @@ class Bitrix24Client(BaseBitrix24Client):
             self._client = requests.Session()
             self._client.headers.update({'Connection': 'keep-alive'})
         else:
-            raise RuntimeError("Client session is already open.")
+            raise Bitrix24Error("Client session is already open.")
 
     def close_session(self):
         if self._client is not None:
             self._client.close()
             self._client = None
         else:
-            raise RuntimeError("Client session is not open.")
+            raise Bitrix24Error("Client session is not open.")
 
 
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:

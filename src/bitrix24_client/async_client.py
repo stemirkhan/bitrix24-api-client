@@ -41,14 +41,14 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         if self._client is None:
             self._client = httpx.AsyncClient(timeout=self._timeout)
         else:
-            raise RuntimeError("Client session is already open.")
+            raise Bitrix24Error("Client session is already open.")
 
     async def close_session(self):
         if self._client is not None:
             await self._client.aclose()
             self._client = None
         else:
-            raise RuntimeError("Client session is not open.")
+            raise Bitrix24Error("Client session is not open.")
 
     async def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
