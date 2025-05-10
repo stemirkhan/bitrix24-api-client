@@ -28,7 +28,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         super().__init__(*args, **kwargs)
         self.max_concurrent_requests = max_concurrent_requests
         self.semaphore = asyncio.Semaphore(self.max_concurrent_requests)
-        self._client: httpx.AsyncClient = None
+        self._client: Optional[httpx.AsyncClient] = None
 
     async def __aenter__(self):
         self._client = httpx.AsyncClient(timeout=self._timeout)
@@ -36,6 +36,19 @@ class AsyncBitrix24Client(BaseBitrix24Client):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._client.aclose()
+
+    async def open_session(self):
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=self._timeout)
+        else:
+            raise RuntimeError("Client session is already open.")
+
+    async def close_session(self):
+        if self._client is not None:
+            await self._client.aclose()
+            self._client = None
+        else:
+            raise RuntimeError("Client session is not open.")
 
     async def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
