@@ -1,5 +1,3 @@
-import math
-
 import httpx
 from typing import Any, Dict, Optional
 import asyncio
@@ -30,6 +28,14 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         super().__init__(*args, **kwargs)
         self.max_concurrent_requests = max_concurrent_requests
         self.semaphore = asyncio.Semaphore(self.max_concurrent_requests)
+        self._client: httpx.AsyncClient = None
+
+    async def __aenter__(self):
+        self._client = httpx.AsyncClient(timeout=self._timeout)
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._client.aclose()
 
     async def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
@@ -82,19 +88,17 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         while retries <= self._max_retries:
             try:
                 async with self.semaphore:
-                    async with httpx.AsyncClient(timeout=self._timeout) as client:
-                        response = await client.post(url, json=params or {})
+                    response = await self._client.post(url, json=params or {})
+                    if response.status_code == 503:
+                        if retries == self._max_retries:
+                            raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
+                        delay = self._calculate_delay(retries)
+                        await asyncio.sleep(delay)
+                        retries += 1
+                        continue
 
-                        if response.status_code == 503:
-                            if retries == self._max_retries:
-                                raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
-                            delay = self._calculate_delay(retries)
-                            await asyncio.sleep(delay)
-                            retries += 1
-                            continue
-
-                        response.raise_for_status()
-                        return self._validate_response(response.text)
+                    response.raise_for_status()
+                    return self._validate_response(response.text)
 
             except httpx.TimeoutException:
                 raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
@@ -147,7 +151,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         for start in range(page_size, total, page_size):
             new_params = params.copy()
             new_params["start"] = start
-            tasks.append(self._make_request(url, new_params))
+            tasks.append(asyncio.create_task(self._make_request(url, new_params)))
 
         pages = await asyncio.gather(*tasks)
 
