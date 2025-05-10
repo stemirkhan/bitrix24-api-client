@@ -13,6 +13,22 @@ from .exceptions import (
 
 
 class Bitrix24Client(BaseBitrix24Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._client: Optional[requests.Session] = None
+
+
+    def __enter__(self) -> "Bitrix24Client":
+        self._client: requests.Session = requests.Session()
+        self._client.headers.update({'Connection': 'keep-alive'})
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._client.close()
+
+
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
         Makes a POST request to the Bitrix24 API and handles errors, with support for paginated list methods.
@@ -63,7 +79,7 @@ class Bitrix24Client(BaseBitrix24Client):
 
         while retries <= self._max_retries:
             try:
-                response = requests.post(url, json=params or {}, timeout=self._timeout)
+                response = self._client.post(url, json=params or {}, timeout=self._timeout)
 
                 if response.status_code == 503:
                     if retries == self._max_retries:
