@@ -1,6 +1,7 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
 
 [project]
 name = "bitrix24-api-client"
@@ -13,12 +14,11 @@ authors = [{name = "Temirkhan", email="temirhansamurhanov@gmail.com"}]
 
 dependencies = [
     "httpx>=0.28.1",
-    "mypy>=1.15.0",
     "requests>=2.32.3",
 ]
 
 [project.optional-dependencies]
-dev = ["mypy"]
+dev = ["mypy>=1.15.0"]
 
 [project.urls]
 Homepage = "https://github.com/stemirkhan/bitrix24-api-client"
