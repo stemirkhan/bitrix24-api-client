@@ -5,8 +5,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
-from src.bitrix24_client.exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
-from src.bitrix24_client.utils import is_valid_url
+from .exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
+from .utils import is_valid_url
 
 
 class BaseBitrix24Client(ABC):
