@@ -1,3 +1,5 @@
+import time
+
 import requests
 from requests.exceptions import RequestException, HTTPError, Timeout, ConnectionError
 from typing import Any, Dict, Optional
@@ -11,6 +13,36 @@ from .exceptions import (
 
 
 class Bitrix24Client(BaseBitrix24Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._client: Optional[requests.Session] = None
+
+
+    def __enter__(self) -> "Bitrix24Client":
+        self._client: requests.Session = requests.Session()
+        self._client.headers.update({'Connection': 'keep-alive'})
+
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._client.close()
+
+    def open_session(self):
+        if self._client is None:
+            self._client = requests.Session()
+            self._client.headers.update({'Connection': 'keep-alive'})
+        else:
+            raise Bitrix24Error("Client session is already open.")
+
+    def close_session(self):
+        if self._client is not None:
+            self._client.close()
+            self._client = None
+        else:
+            raise Bitrix24Error("Client session is not open.")
+
+
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
         """
         Makes a POST request to the Bitrix24 API and handles errors, with support for paginated list methods.
@@ -52,24 +84,38 @@ class Bitrix24Client(BaseBitrix24Client):
             dict: The parsed JSON response from Bitrix24 API.
 
         Raises:
-            Bitrix24InvalidResponseError: If the response is not a valid JSON.
-            Bitrix24APIError: If the Bitrix24 API returns an error.
+            Bitrix24TimeoutError: If the request times out.
+            Bitrix24ConnectionError: If the connection to Bitrix24 fails.
+            Bitrix24HTTPError: If a non-503 HTTP error occurs.
+            Bitrix24Error: If maximum retries are exceeded or another request error occurs.
         """
-        try:
-            response = requests.post(url, json=params or {}, timeout=self.timeout)
-            response.raise_for_status()
+        retries = 0
 
-            data = self._validate_response(response.text)
-            return data
+        while retries <= self._max_retries:
+            try:
+                response = self._client.post(url, json=params or {}, timeout=self._timeout)
 
-        except Timeout:
-            raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
-        except ConnectionError:
-            raise Bitrix24ConnectionError(f"Failed to connect to Bitrix24: {url}")
-        except HTTPError as e:
-            raise Bitrix24HTTPError(e.response.status_code, e.response.text)
-        except RequestException as e:
-            raise Bitrix24Error(f"Request error to Bitrix24: {str(e)}")
+                if response.status_code == 503:
+                    if retries == self._max_retries:
+                        raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
+                    delay = self._calculate_delay(retries)
+                    time.sleep(delay)
+                    retries += 1
+                    continue
+
+                response.raise_for_status()
+                return self._validate_response(response.text)
+
+            except Timeout:
+                raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
+            except ConnectionError:
+                raise Bitrix24ConnectionError(f"Failed to connect to Bitrix24: {url}")
+            except HTTPError as e:
+                raise Bitrix24HTTPError(e.response.status_code, e.response.text)
+            except RequestException as e:
+                raise Bitrix24Error(f"Request error to Bitrix24: {str(e)}")
+
+        raise Bitrix24Error(f"Exceeded maximum retry attempts for {url}")
 
     def _fetch(self, url: str, params: Optional[Dict[str, Any]]) -> list:
         """

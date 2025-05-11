@@ -1,23 +1,45 @@
 import asyncio
-from src.bitrix24_client.async_client import AsyncBitrix24Client
+from typing import List
+
+from src.bitrix24_client import AsyncBitrix24Client
+from src.bitrix24_client import chunk_batch_requests
 
 
-async def main():
-    client = AsyncBitrix24Client(base_url='https://yourdomain.bitrix24.ru',
-                                 access_token='your_webhook_key',
-                                 user_id=1,  # Optional user_id parameter
-                                 max_concurrent_requests=10)
+async def run_batch_example():
+    client = AsyncBitrix24Client(
+        base_url="https://example.bitrix24.ru",
+        access_token="token",
+        max_concurrent_requests=35,
+        user_id=1
+    )
+    await client.open_session()
 
-    try:
-        result = await client.call_method(
-            method='crm.contact.list',
-            params={'select': ['ID', 'NAME']},
-            fetch_all=True
-        )
-        print("Contacts:", result)
-    except Exception as e:
-        print(f"Error occurred: {e}")
+    lead_ids: List[dict] = await client.call_method(
+        'crm.lead.list',
+        params={
+            'select': ['ID']
+        },
+        fetch_all=True
+    )
+
+    commands = {
+        f"get_lead_{lead_id['ID']}": f"crm.lead.get?id={lead_id['ID']}"
+        for lead_id in lead_ids
+    }
+
+    chunks = chunk_batch_requests(commands)
+
+    get_lead_tasks = [
+        asyncio.create_task(client.call_method(
+            'batch',
+            params={"halt": 1, "cmd": chunk}
+        )) for chunk in chunks
+    ]
+
+    results = await asyncio.gather(*get_lead_tasks)
+
+    await client.close_session()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(run_batch_example())

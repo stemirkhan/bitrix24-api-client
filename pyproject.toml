@@ -1,18 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "bitrix24-api-client"
 version = "0.1.0"
 description = "Library for working with the Bitrix24 API (supports both synchronous and asynchronous clients)."
 readme = "README.md"
 requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [{name = "Temirkhan"}]
+
 dependencies = [
     "httpx>=0.28.1",
     "mypy>=1.15.0",
     "requests>=2.32.3",
 ]
-package-dir = {"" = "src"}
 
 [project.optional-dependencies]
 dev = ["mypy"]
+
+[project.urls]
+Homepage = "https://github.com/stemirkhan/bitrix24-api-client"
+Repository = "https://github.com/stemirkhan/bitrix24-api-client"
+Issues = "https://github.com/stemirkhan/bitrix24-api-client/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.mypy]
 python_version = "3.12"
