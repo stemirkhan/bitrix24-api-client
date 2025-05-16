@@ -98,7 +98,7 @@ class Bitrix24Client(BaseBitrix24Client):
                 if response.status_code == 503:
                     if retries == self._max_retries:
                         raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
-                    delay = self._calculate_delay(retries)
+                    delay = self._retry_strategy.calculate_delay(retries)
                     time.sleep(delay)
                     retries += 1
                     continue
