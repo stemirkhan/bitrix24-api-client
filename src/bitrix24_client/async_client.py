@@ -136,7 +136,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
             list: The list of results from the single page of data.
         """
         data = await self._make_request(url, params)
-        results, _, _ = self._handle_response(data, fetch_all=False)
+        results, _, _ = self._response_formatter.format(data, fetch_all=False)
         return results
 
     async def _fetch_all_pages(self, url: str, params: Optional[Dict[str, Any]]) -> list:
@@ -152,7 +152,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         """
         params = params.copy() if params else {}
         data = await self._make_request(url, params)
-        results, next_item, total = self._handle_response(data, fetch_all=True)
+        results, next_item, total = self._response_formatter.format(data, fetch_all=True)
         page_size = 50
 
         if not next_item:
@@ -169,7 +169,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
         pages = await asyncio.gather(*tasks)
 
         for page in pages:
-            page_results, _, _ = self._handle_response(page, fetch_all=True)
+            page_results, _, _ = self._response_formatter.format(page, fetch_all=True)
             all_results.extend(page_results)
 
         return all_results

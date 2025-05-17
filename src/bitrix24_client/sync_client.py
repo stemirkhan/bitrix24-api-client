@@ -129,7 +129,7 @@ class Bitrix24Client(BaseBitrix24Client):
             list: The list of results from the single page of data.
         """
         data = self._make_request(url, params)
-        results, _, _ = self._handle_response(data, fetch_all=False)
+        results, _, _ = self._response_formatter.format(data, fetch_all=False)
         return results
 
     def _fetch_all_pages(self, url: str, params: Optional[Dict[str, Any]]) -> list:
@@ -149,7 +149,7 @@ class Bitrix24Client(BaseBitrix24Client):
         while True:
             data = self._make_request(url, params)
 
-            results, next_page, _ = self._handle_response(data, fetch_all=True)
+            results, next_page, _ = self._response_formatter.format(data, fetch_all=True)
 
             all_results.extend(results)
 
