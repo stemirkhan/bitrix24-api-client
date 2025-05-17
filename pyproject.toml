@@ -2,15 +2,41 @@
 requires = ["setuptools>=42.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "bitrix24-api-client"
-version = "0.1.1"
-description = "Library for working with the Bitrix24 API (supports both synchronous and asynchronous clients)."
+version = "0.1.2"
+description = "A modern Python client for Bitrix24 REST API. Supports both synchronous and asynchronous communication."
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "Temirkhan", email="temirhansamurhanov@gmail.com"}]
+authors = [{name = "Temirkhan", email = "temirhansamurhanov@gmail.com"}]
+
+keywords = [
+    "bitrix24",
+    "bitrix",
+    "rest",
+    "crm",
+    "api",
+    "python client",
+    "httpx",
+    "requests",
+    "async",
+    "webhook"
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Framework :: AsyncIO",
+]
 
 dependencies = [
     "httpx>=0.28.1",
@@ -24,6 +50,7 @@ dev = ["mypy>=1.15.0"]
 Homepage = "https://github.com/stemirkhan/bitrix24-api-client"
 Repository = "https://github.com/stemirkhan/bitrix24-api-client"
 Issues = "https://github.com/stemirkhan/bitrix24-api-client/issues"
+Documentation = "https://github.com/stemirkhan/bitrix24-api-client#readme"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
