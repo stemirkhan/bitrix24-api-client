@@ -1,6 +1,6 @@
 from random import uniform
 
-from .interfaces import RetryStrategyI
+from ..interfaces import RetryStrategyI
 
 
 class ExponentialJitterRetryStrategyI(RetryStrategyI):

@@ -1,5 +1,5 @@
 import json
-from .interfaces import ResponseValidatorI
+from ..interfaces import ResponseValidatorI
 from ..exceptions import Bitrix24InvalidResponseError, Bitrix24APIError
 
 

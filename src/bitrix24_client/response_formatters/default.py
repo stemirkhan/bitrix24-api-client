@@ -1,5 +1,5 @@
 from typing import Any, Tuple
-from .interfaces import ResponseFormatterI
+from ..interfaces import ResponseFormatterI
 
 class DefaultResponseFormatter(ResponseFormatterI):
     def format(self, data: dict, fetch_all: bool) -> Tuple[list, Any, Any]:

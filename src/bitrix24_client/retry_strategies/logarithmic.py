@@ -1,6 +1,6 @@
 from math import log1p
 
-from .interfaces import RetryStrategyI
+from ..interfaces import RetryStrategyI
 
 
 class LogarithmicRetryStrategyI(RetryStrategyI):
