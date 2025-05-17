@@ -1,4 +1,4 @@
-from .interfaces import RetryStrategyI
+from ..interfaces import RetryStrategyI
 
 
 class ExponentialRetryStrategyI(RetryStrategyI):

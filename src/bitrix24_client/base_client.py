@@ -6,10 +6,10 @@ from urllib.parse import urljoin
 from .exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
 from .response_formatters import DefaultResponseFormatter
 from .validators import DefaultResponseValidator
-from .validators.interfaces import ResponseValidatorI
-from .response_formatters.interfaces import ResponseFormatterI
+from .interfaces import ResponseValidatorI
+from .interfaces import ResponseFormatterI
 from .retry_strategies import ExponentialRetryStrategyI
-from .retry_strategies.interfaces import RetryStrategyI
+from .interfaces import RetryStrategyI
 from .utils import is_valid_url
 
 
