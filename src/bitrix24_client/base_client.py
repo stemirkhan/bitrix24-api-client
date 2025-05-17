@@ -1,11 +1,11 @@
 import json
-import math
-import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 from urllib.parse import urljoin
 
 from .exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
+from .response_formatters import DefaultResponseFormatter
+from .response_formatters.interfaces import ResponseFormatterI
 from .retry_strategies import ExponentialRetryStrategyI
 from .retry_strategies.interfaces import RetryStrategyI
 from .utils import is_valid_url
@@ -20,6 +20,7 @@ class BaseBitrix24Client(ABC):
             timeout: int = 10,
             max_retries: int = 5,
             retry_strategy: Optional[RetryStrategyI] = None,
+            response_formatter: Optional[ResponseFormatterI] = None
     ):
         """
         Initialize the base Bitrix24 API client.
@@ -44,6 +45,7 @@ class BaseBitrix24Client(ABC):
         self._timeout = timeout
         self._max_retries = max_retries
         self._retry_strategy = retry_strategy or ExponentialRetryStrategyI(base=5, max_delay=20)
+        self._response_formatter = response_formatter or DefaultResponseFormatter()
 
     @property
     def max_retries(self) -> int:
@@ -110,28 +112,6 @@ class BaseBitrix24Client(ABC):
         else:
             path = f"rest/{self._access_token}/{method}"
         return urljoin(self._base_url, path)
-
-    @staticmethod
-    def _handle_response(data: dict, fetch_all: bool) -> tuple[list, Any, Any]:
-        """
-        Handles the response from Bitrix24 API and manages pagination if needed.
-
-        Args:
-            data (dict): The response data from the API.
-            fetch_all (bool): Whether to fetch all pages of data.
-
-        Returns:
-            tuple: A tuple of results and the next page token (if any).
-        """
-        results = data.get("result", [])
-
-        if isinstance(results, dict):
-            key = list(results.keys())[0]
-            results = results[key]
-
-        if fetch_all:
-            return results, data.get('next', None), data.get('total', None)
-        return results, None, None
 
     @staticmethod
     def _validate_response(response_text: str) -> dict:
