@@ -3,7 +3,7 @@ from random import uniform
 from ..interfaces import RetryStrategyI
 
 
-class ExponentialJitterRetryStrategyI(RetryStrategyI):
+class ExponentialJitterRetryStrategy(RetryStrategyI):
     def __init__(self, base: float, max_delay: float):
         self.base = base
         self.max_delay = max_delay

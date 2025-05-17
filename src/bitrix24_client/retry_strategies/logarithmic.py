@@ -3,7 +3,7 @@ from math import log1p
 from ..interfaces import RetryStrategyI
 
 
-class LogarithmicRetryStrategyI(RetryStrategyI):
+class LogarithmicRetryStrategy(RetryStrategyI):
     def __init__(self, base: float, max_delay: float):
         self.base = base
         self.max_delay = max_delay
