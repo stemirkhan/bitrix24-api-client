@@ -1,7 +1,7 @@
 from ..interfaces import RetryStrategyI
 
 
-class ExponentialRetryStrategyI(RetryStrategyI):
+class ExponentialRetryStrategy(RetryStrategyI):
     def __init__(self, base: float, max_delay: float):
         self.base = base
         self.max_delay = max_delay
