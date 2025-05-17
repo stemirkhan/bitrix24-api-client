@@ -98,13 +98,13 @@ class Bitrix24Client(BaseBitrix24Client):
                 if response.status_code == 503:
                     if retries == self._max_retries:
                         raise Bitrix24Error(f"Max retries exceeded for 503 error: {url}")
-                    delay = self._calculate_delay(retries)
+                    delay = self._retry_strategy.calculate_delay(retries)
                     time.sleep(delay)
                     retries += 1
                     continue
 
                 response.raise_for_status()
-                return self._validate_response(response.text)
+                return self._response_validator.validate(response.text)
 
             except Timeout:
                 raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")
@@ -129,7 +129,7 @@ class Bitrix24Client(BaseBitrix24Client):
             list: The list of results from the single page of data.
         """
         data = self._make_request(url, params)
-        results, _, _ = self._handle_response(data, fetch_all=False)
+        results, _, _ = self._response_formatter.format(data, fetch_all=False)
         return results
 
     def _fetch_all_pages(self, url: str, params: Optional[Dict[str, Any]]) -> list:
@@ -149,7 +149,7 @@ class Bitrix24Client(BaseBitrix24Client):
         while True:
             data = self._make_request(url, params)
 
-            results, next_page, _ = self._handle_response(data, fetch_all=True)
+            results, next_page, _ = self._response_formatter.format(data, fetch_all=True)
 
             all_results.extend(results)
 
