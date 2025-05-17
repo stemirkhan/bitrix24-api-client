@@ -8,7 +8,7 @@ from .response_formatters import DefaultResponseFormatter
 from .validators import DefaultResponseValidator
 from .interfaces import ResponseValidatorI
 from .interfaces import ResponseFormatterI
-from .retry_strategies import ExponentialRetryStrategyI
+from .retry_strategies import ExponentialRetryStrategy
 from .interfaces import RetryStrategyI
 from .utils import is_valid_url
 
@@ -49,7 +49,7 @@ class BaseBitrix24Client(ABC):
         self._user_id = user_id
         self._timeout = timeout
         self._max_retries = max_retries
-        self._retry_strategy = retry_strategy or ExponentialRetryStrategyI(base=5, max_delay=20)
+        self._retry_strategy = retry_strategy or ExponentialRetryStrategy(base=5, max_delay=20)
         self._response_formatter = response_formatter or DefaultResponseFormatter()
         self._response_validator = response_validator or DefaultResponseValidator()
 
