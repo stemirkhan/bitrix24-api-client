@@ -1,27 +1,29 @@
-# Bitrix24 API Client
+# Bitrix24 REST API Client
 
 ![License](https://img.shields.io/github/license/stemirkhan/bitrix24-api-client)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![Build](https://img.shields.io/badge/status-active-brightgreen)
 
-Библиотека для взаимодействия с [Bitrix24 REST API](https://training.bitrix24.com/rest_help/), поддерживающая как синхронный, так и асинхронный режим работы.
+A Python client for interacting with the Bitrix24 REST API.  
+Supports both synchronous (`requests`) and asynchronous (`httpx`) modes.  
+Ideal for CRM automation, data synchronization, and Bitrix24 integrations.
 
-## 🔧 Возможности
+## 🔧 Features
 
-* Синхронный клиент (`requests`)
-* Асинхронный клиент (`httpx`)
-* Поддержка стратегий повторов: `fixed`, `linear`, `exponential`, `logarithmic`, `exponential_jitter`
-* Поддержка постраничной загрузки (`fetch_all=True`)
-* Обработка ошибок API и HTTP
-* Менеджер контекста и сессий
+* Synchronous client (`requests`)
+* Asynchronous client (`httpx`)
+* Retry strategies: `fixed`, `linear`, `exponential`, `logarithmic`, `exponential_jitter`
+* Support for pagination (`fetch_all=True`)
+* API and HTTP error handling
+* Context manager and session support
 
-## 💻 Установка
+## 💻 Installation
 
 ```bash
 pip install bitrix24-api-client
 ```
 
-## 🚀 Быстрый старт
+## 🚀 Quick Start
 
 ```python
 from bitrix24_client import Bitrix24Client
@@ -82,17 +84,17 @@ if __name__ == "__main__":
     asyncio.run(run_batch_example())
 ```
 
-## 🔁 Стратегии повторных попыток
+## 🔁 Retry Strategies
 
-Поддерживаемые стратегии:
+Supported strategies:
 
-* `fixed` — фиксированная задержка
-* `linear` — линейный рост
-* `logarithmic` — логарифмический рост
-* `exponential` — экспоненциальный рост
-* `exponential_jitter` — экспоненциальный с джиттером (случайная задержка)
+* `fixed` — fixed delay
+* `linear` — linear backoff
+* `logarithmic` — logarithmic backoff
+* `exponential` — exponential backoff
+* `exponential_jitter` — exponential backoff with jitter (randomized delay)
 
-Пример:
+Example:
 
 ```python
 client = Bitrix24Client(
@@ -101,32 +103,35 @@ client = Bitrix24Client(
     retry_strategy="exponential_jitter"
 )
 ```
+## ⚙️ Constructor Arguments
 
-## ⚙️ Аргументы конструктора
+| Parameter            | Description                                                            |
+| -------------------- | ---------------------------------------------------------------------- |
+| `base_url`           | Base URL of the Bitrix24 portal.                                       |
+| `access_token`       | Bitrix24 access token or webhook key.                                  |
+| `user_id`            | User ID for OAuth-based authentication (optional, `None` for webhook). |
+| `timeout`            | Request timeout in seconds.                                            |
+| `max_retries`        | Maximum number of retries on 503 errors.                               |
+| `retry_strategy`     | Optional retry delay strategy (implements `RetryStrategyI`).           |
+| `response_formatter` | Optional API response formatter (implements `ResponseFormatterI`).     |
+| `response_validator` | Optional API response validator (implements `ResponseValidatorI`).     |
 
-| Параметр           | Описание                                  |
-| ------------------ | ----------------------------------------- |
-| `base_url`         | URL портала Bitrix24                      |
-| `access_token`     | Токен или Webhook ключ                    |
-| `user_id`          | ID пользователя                           |
-| `timeout`          | Таймаут запроса                           |
-| `rate_limit_pause` | Базовая задержка перед повтором           |
-| `max_retries`      | Максимальное количество повторов          |
-| `max_delay`        | Максимальная задержка между повторами     |
-| `retry_strategy`   | Стратегия повтора (см. выше)              |
+**Note:**
+If `retry_strategy`, `response_formatter`, or `response_validator` are not provided, default implementations will be used.
 
-
----
-
-## 🤝 Участие
-
-Если вы нашли ошибку, хотите предложить улучшение или добавить функциональность — буду рад вашей помощи. Можно создать issue или отправить pull request.
-
-Любой вклад приветствуется: от кода и документации до примеров использования.
+**Raises:**
+`Bitrix24InvalidBaseURLError` — If the provided `base_url` is invalid.
 
 ---
 
-## 📄 Лицензия
+## 🤝 Contributing
 
-Проект распространяется под лицензией MIT. См. файл [LICENSE](https://github.com/stemirkhan/bitrix24-api-client/blob/main/LICENSE) для подробностей.
+If you’ve found a bug, have a suggestion, or want to add a feature — your help is welcome! Feel free to open an issue or submit a pull request.
 
+All contributions are appreciated: code, documentation, or usage examples.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/stemirkhan/bitrix24-api-client/blob/main/LICENSE) file for details.
