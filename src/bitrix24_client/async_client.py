@@ -111,7 +111,7 @@ class AsyncBitrix24Client(BaseBitrix24Client):
                         continue
 
                     response.raise_for_status()
-                    return self._validate_response(response.text)
+                    return self._response_validator.validate(response.text)
 
             except httpx.TimeoutException:
                 raise Bitrix24TimeoutError(f"Request to Bitrix24 timed out: {url}")

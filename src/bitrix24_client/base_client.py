@@ -5,6 +5,8 @@ from urllib.parse import urljoin
 
 from .exceptions import Bitrix24InvalidBaseURLError, Bitrix24InvalidResponseError, Bitrix24APIError
 from .response_formatters import DefaultResponseFormatter
+from .validators import DefaultResponseValidator
+from .validators.interfaces import ResponseValidatorI
 from .response_formatters.interfaces import ResponseFormatterI
 from .retry_strategies import ExponentialRetryStrategyI
 from .retry_strategies.interfaces import RetryStrategyI
@@ -20,7 +22,8 @@ class BaseBitrix24Client(ABC):
             timeout: int = 10,
             max_retries: int = 5,
             retry_strategy: Optional[RetryStrategyI] = None,
-            response_formatter: Optional[ResponseFormatterI] = None
+            response_formatter: Optional[ResponseFormatterI] = None,
+            response_validator: Optional[ResponseValidatorI] = None
     ):
         """
         Initialize the base Bitrix24 API client.
@@ -32,6 +35,8 @@ class BaseBitrix24Client(ABC):
             timeout (int): Request timeout in seconds.
             max_retries (int): Maximum number of retries on 503 errors.
             retry_strategy (Optional[RetryStrategyI]): Retry delay strategy.
+            response_formatter (Optional[ResponseFormatterI]): Formatter for processing the API response.
+            response_validator (Optional[ResponseValidatorI]): Validator for checking the correctness of the API response.
 
         Raises:
             Bitrix24InvalidBaseURLError: If the provided base_url is invalid.
@@ -46,6 +51,7 @@ class BaseBitrix24Client(ABC):
         self._max_retries = max_retries
         self._retry_strategy = retry_strategy or ExponentialRetryStrategyI(base=5, max_delay=20)
         self._response_formatter = response_formatter or DefaultResponseFormatter()
+        self._response_validator = response_validator or DefaultResponseValidator()
 
     @property
     def max_retries(self) -> int:
@@ -112,34 +118,6 @@ class BaseBitrix24Client(ABC):
         else:
             path = f"rest/{self._access_token}/{method}"
         return urljoin(self._base_url, path)
-
-    @staticmethod
-    def _validate_response(response_text: str) -> dict:
-        """
-        Validates and parses the JSON response from Bitrix24 API.
-
-        Args:
-            response_text (str): The response text from the API.
-
-        Returns:
-            dict: Parsed JSON data.
-
-        Raises:
-            Bitrix24InvalidResponseError: If the response is not valid JSON.
-            Bitrix24APIError: If the response contains an API error.
-        """
-        try:
-            data = json.loads(response_text)
-        except ValueError:
-            raise Bitrix24InvalidResponseError(f"Invalid JSON from Bitrix24: {response_text}")
-
-        if "error" in data:
-            raise Bitrix24APIError(
-                code=data.get("error"),
-                description=data.get("error_description") or "No description"
-            )
-
-        return data
 
     @abstractmethod
     def call_method(self, method: str, params: Optional[Dict[str, Any]] = None, fetch_all: bool = False) -> Any:
